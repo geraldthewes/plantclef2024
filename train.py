@@ -6,7 +6,11 @@ from transformers import AutoModelForImageClassification, TrainingArguments, Tra
 from torchvision.transforms import RandomResizedCrop, Compose, Normalize, ToTensor
 import numpy as np
 from datasets import load_dataset
+import evaluate
+import argparse
+import os
 
+# Inspired from https://huggingface.co/docs/transformers/en/tasks/image_classification
 
 
 #notebook_login()
@@ -14,8 +18,30 @@ from datasets import load_dataset
 
 # replace this
 #plants = load_dataset('plants', data_dir={'train': '/mnt/data6/AI/data/plants/PlantCLEF2024/PlantCLEF2024singleplanttrainingdata/PlantCLEF2024/train', 'test': '/mnt/data6/AI/data/plants/PlantCLEF2024/PlantCLEF2024singleplanttrainingdata/PlantCLEF2024/test', 'validation': '/mnt/data6/AI/data/plants/PlantCLEF2024/PlantCLEF2024singleplanttrainingdata/PlantCLEF2024/validation'})
+# Initialize argument parser
+parser = argparse.ArgumentParser(description="Train an image classification model.")
+parser.add_argument('--data_dir', type=str, required=True,
+                    help='Directory where the dataset is located.')
+parser.add_argument('--output_dir', type=str, default='output',
+                    help='Directory to save the output. Default is "output".')
+parser.add_argument('--test_size', type=float, default=None,
+                    help='Test size if you need to split dataset in train vs test')
+parser.add_argument('--epoch', type=int, default=10,
+                    help='Number of training epochs')
+
+
+# Parse command line arguments
+args = parser.parse_args()
+
 print("Load dataset")
-plants = load_dataset('imagefolder', data_dir='/mnt/data6/AI/data/plants/PlantCLEF2024/PlantCLEF2024singleplanttrainingdata/PlantCLEF2024/')
+plants = load_dataset('imagefolder', data_dir=args.data_dir)
+#print(type(plants))
+#print(plants)
+if args.test_size:
+    plants = plants["train"].train_test_split(test_size=args.test_size)
+    #print(plants)
+    #train_dataset = train_testvalid["train"]
+    #test_dataset = train_testvalid["test"]    
 
 #plants = plants.train_test_split(test_size=0.2)
 
@@ -78,7 +104,7 @@ model = AutoModelForImageClassification.from_pretrained(
 
 
 training_args = TrainingArguments(
-    output_dir="plantclef2020",
+    output_dir=args.output_dir,
     remove_unused_columns=False,
     eval_strategy="epoch",
     save_strategy="epoch",
